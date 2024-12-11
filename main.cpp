@@ -1,49 +1,105 @@
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
-#include <FL/Fl_Choice.H>
-#include <FL/Fl_Button.H>
 #include <FL/Fl_Box.H>
-#include <FL/Fl_Group.H>
-#include <iostream>
+#include <FL/Fl_Choice.H>
+#include <FL/Fl_Output.H>
+#include <FL/Fl_Menu_Item.H>
+#include <FL/Fl_PNG_Image.H>
+#include <string>
+#include <vector>
+#include <map>
 
-void choice_callback(Fl_Widget* widget, void* data) {
+// Callback function to handle list selections
+void choice_cb(Fl_Widget* widget, void* data) {
     Fl_Choice* choice = (Fl_Choice*)widget;
-    std::cout << "Vous avez sélectionné : " << choice->text(choice->value()) << std::endl;
+    std::map<std::string, std::string>* selections = (std::map<std::string, std::string>*)data;
+
+    std::string list_name = choice->label();
+    std::string selected_value = choice->text();
+    (*selections)[list_name] = selected_value;
+
+    // Example: Print the selection
+    printf("List %s: Selected %s\n", list_name.c_str(), selected_value.c_str());
 }
 
 int main() {
-    // Créer une fenêtre
-    Fl_Window* window = new Fl_Window(400, 300, "Liste déroulante avec FLTK");
+    // Main window
+    Fl_Window* window = new Fl_Window(820, 400, "Dynamic UI Example");
 
-    // Définir la couleur de fond de la fenêtre
-    window->color(FL_WHITE);
+    // Image placeholder
+    Fl_PNG_Image* background_image = new Fl_PNG_Image("background.png");
+    Fl_Box* image_box = new Fl_Box(20, 20, 64, 64, "Image");
+    image_box->image(background_image);
+    image_box->box(FL_UP_BOX);
 
-    // Créer un groupe pour organiser les widgets
-    Fl_Group* group = new Fl_Group(20, 20, 360, 260);
-    group->box(FL_UP_BOX);
-    group->color(FL_LIGHT2);
+    // Value placeholders
+    int x_offset = 240;
+    int y_offset = 20;
+    std::vector<Fl_Output*> value_placeholders;
 
-    // Créer une étiquette
-    Fl_Box* label = new Fl_Box(20, 20, 360, 30, "Sélectionnez une option :");
-    label->labelsize(16);
-    label->labelcolor(FL_DARK_BLUE);
-    label->align(FL_ALIGN_CENTER);
+    // List of labels for the value outputs
+    std::vector<std::string> value_labels = {
+        "Base stat", "Cool down", "Range", "Projectile speed",
+        "Duration", "Radius", "Crit hit chance", "Crit hit multiplier", "Combo damage"
+    };
 
-    // Créer une liste déroulante
-    Fl_Choice* choice = new Fl_Choice(50, 70, 300, 30);
-    choice->add("Option 1");
-    choice->add("Option 2");
-    choice->add("Option 3");
-    choice->add("Option 4");
-    choice->value(0); // Sélectionner la première option par défaut
-    choice->color(FL_WHITE); // Couleur de fond de la liste déroulante
+    for (int i = 0; i < 7; ++i) {
+        // Label above each Fl_Output
+        Fl_Box* value_label = new Fl_Box(x_offset, y_offset, 100, 20, value_labels[i].c_str());
+        value_label->align(FL_ALIGN_CENTER);
 
-    // Ajouter un bouton pour valider la sélection
-    Fl_Button* button = new Fl_Button(150, 120, 100, 30, "Valider");
-    button->callback(choice_callback, choice);
+        // Fl_Output placeholder
+        Fl_Output* value_output = new Fl_Output(x_offset, y_offset + 20, 100, 30);
+        value_output->value("N/A");
+        value_placeholders.push_back(value_output);
+        y_offset += 60;
+        if ((i + 1) % 2 == 0) { // Layout adjustment
+            x_offset += 120;
+            y_offset = 20;
+        }
+    }
 
-    // Afficher le groupe et la fenêtre
-    group->end();
+    // Labels for lists
+    std::vector<std::string> labels = {
+        "Object type", "Rarity", "Name", "Object level",
+        "Training level", "Perk 1", "Perk 2", "Perk 3", "Perk 4"
+    };
+
+    // List placeholders with text above
+    x_offset = 20;
+    y_offset = 200; // Starting position
+    int list_width = 150; // Width of each list
+    int list_height = 30; // Height of each list
+    int spacing = 10; // Space between lists
+    int label_height = 20; // Height of the labels
+    std::vector<Fl_Choice*> lists;
+    std::map<std::string, std::string> selections; // Track user selections
+
+    for (int i = 0; i < 9; ++i) {
+        // Add the label above the list
+        Fl_Box* label_box = new Fl_Box(x_offset, y_offset, list_width, label_height, labels[i].c_str());
+        label_box->align(FL_ALIGN_CENTER);
+
+        // Add the list itself
+        Fl_Choice* choice = new Fl_Choice(x_offset, y_offset + label_height + spacing, list_width, list_height);
+
+        // Example initial items
+        choice->add("Option A");
+        choice->add("Option B");
+        choice->add("Option C");
+        choice->callback(choice_cb, &selections);
+
+        lists.push_back(choice);
+
+        // Adjust position for the next list
+        x_offset += list_width + spacing;
+        if ((i + 1) % 5 == 0) { // Move to the next row after 4 lists
+            x_offset = 20; // Reset x position
+            y_offset += label_height + list_height + 2 * spacing;
+        }
+    }
+
+    // Make everything visible
     window->end();
     window->show();
 
